@@ -3,7 +3,7 @@ The official code for the paper "Investigating Intrinsic Degradation Factors by 
 ## Environment Preparing
 python 3.6  <br>  pytorch 1.1.0
 ### Testing
-Run the script below, the results will be saved in './result/'
+Run the script below, the results will be saved in `./result/`
 
     python predict.py
     --dataroot      # The folder path of the picture you want to test
