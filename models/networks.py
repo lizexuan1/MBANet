@@ -1272,8 +1272,7 @@ class _UNetGenerator(nn.Module):
             nonlinearity
         )
         self.conv2 = _EncoderBlock(ngf, ngf*2, ngf*2, norm_layer, nonlinearity, use_bias)
-        #self.conv3 = _EncoderBlock(ngf*2, ngf*4, ngf*4, norm_layer, nonlinearity, use_bias)
-        #self.conv4 = _EncoderBlock(ngf*4, ngf*8, ngf*8, norm_layer, nonlinearity, use_bias)
+
 
         for i in range(layers-4):
             conv = _EncoderBlock(ngf*2, ngf*2, ngf*2, norm_layer, nonlinearity, use_bias)
@@ -1295,14 +1294,9 @@ class _UNetGenerator(nn.Module):
         for i in range(layers-4):
             upconv = _DecoderUpBlock(ngf*(4+2), ngf*4, ngf*2, norm_layer, nonlinearity, use_bias)
             setattr(self, 'up' + str(i), upconv.model)
-
-        #self.deconv4 = _DecoderUpBlock(ngf*(4+4), ngf*8, ngf*2, norm_layer, nonlinearity, use_bias)
-        #self.deconv3 = _DecoderUpBlock(ngf*(2+2), ngf*4, ngf, norm_layer, nonlinearity, use_bias)
         self.deconv2 = _DecoderUpBlock(ngf*4, ngf*2, ngf, norm_layer, nonlinearity, use_bias)
         self.deconv1 = _DecoderUpBlock(ngf+output_nc, ngf*2, ngf, norm_layer, nonlinearity, use_bias)
 
-        #self.output4 = _OutputBlock(ngf*(4+4), output_nc, 3, use_bias)
-        #self.output3 = _OutputBlock(ngf*(2+2), output_nc, 3, use_bias)
         self.output2 = _OutputBlock(ngf*4, output_nc, 3, use_bias)
         self.output1 = _OutputBlock(ngf+output_nc, output_nc, 7, use_bias)
         self.output1_1 = _OutputBlock(ngf+output_nc, 1, 7, use_bias)
@@ -1311,47 +1305,14 @@ class _UNetGenerator(nn.Module):
         self.upsample1 = nn.Upsample(scale_factor=0.5, mode='nearest')
         self.tanh = nn.Tanh()
 
-        #self.deconv1_4 = _DecoderUpBlock(ngf*(4+4), ngf*8, ngf*2, norm_layer, nonlinearity, use_bias)
-        #self.deconv1_3 = _DecoderUpBlock(ngf*(2+2), ngf*4, ngf, norm_layer, nonlinearity, use_bias)
         self.deconv1_2 = _DecoderUpBlock(ngf*(1+1), ngf*2, ngf, norm_layer, nonlinearity, use_bias)
-        #self.deconv1_1 = _DecoderUpBlock(ngf*(1+1), ngf*2, ngf, norm_layer, nonlinearity, use_bias)
 
-        #self.output1_4 = _OutputBlock(ngf*(4+4), output_nc, 3, use_bias)
-        #self.output1_3 = _OutputBlock(ngf*(2+2), output_nc, 3, use_bias)
         self.output1_2 = _OutputBlock(ngf*(1+1), output_nc, 3, use_bias)
-        #self.output1_1 = _OutputBlock(int(ngf/2)+output_nc, output_nc, 7, use_bias)
 
-        #self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-
-
-
-        #self.deconv2_4 = _DecoderUpBlock(ngf*(4+4), ngf*8, ngf*2, norm_layer, nonlinearity, use_bias)
-        #self.deconv2_3 = _DecoderUpBlock(ngf*3, ngf*4, ngf, norm_layer, nonlinearity, use_bias)
-        #self.deconv2_2 = _DecoderUpBlock(ngf*(1+1), ngf*2, int(ngf/2), norm_layer, nonlinearity, use_bias)
-
-        #self.output2_4 = _OutputBlock(ngf*(4+4), output_nc, 3, use_bias)
-        #self.output2_3 = _OutputBlock(ngf*3, output_nc, 3, use_bias)
-        #self.output2_2 = _OutputBlock(ngf*(1+1), output_nc, 3, use_bias)
-        #self.output2_1 = _OutputBlock(int(ngf/2)+output_nc, output_nc, 7, use_bias)
-
-        #self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, input, gray):
-        #print("input=",input.shape)
-        print(input.size())
-        # print(gray.size())
         conv1 = self.pool(self.conv1(input))
-        print(conv1.size())
-        #conv1_1 = self.conv1(input)
-        #print("conv1=",conv1.shape)
         center_in = self.pool(self.conv2.forward(conv1))
-
-        #print("conv2=",center_in.shape)
-        
-        #center_in = self.pool(self.conv3.forward(conv2))
-        #print("conv3=",center_in.shape)
-        #center_in = self.pool(self.conv4.forward(conv3))
-        #print("conv4=",center_in.shape)
 
         middle = [center_in]
         for i in range(self.layers-4):
@@ -1364,62 +1325,25 @@ class _UNetGenerator(nn.Module):
         for i in range(self.layers-4):
             model = getattr(self, 'up'+str(i))
             center_out = model.forward(torch.cat([center_out, middle[self.layers-5-i]], 1))
-        #center_out = self.upsample1(center_out)
-        #print("center_out=",center_out.shape)
-        #ans = torch.cat([center_out, conv1 * self.weight],1)
-        #deconv3 = self.deconv3.forward(torch.cat([center_out, conv2 * self.weight], 1))
-        #output3 = self.output3.forward(torch.cat([center_out, conv2 * self.weight], 1))
-        #result.append(output4)
-        #print("output4=",output4.shape)
+
         center_in = self.upsample(center_in)
         deconv2 = self.deconv2.forward(torch.cat([center_out, center_in * self.weight * 0.1], 1))
         output2 = self.output2.forward(torch.cat([center_out, center_in * self.weight * 0.1], 1))
-        #result.append(output2)
-        #print("deconv2=",deconv2.shape)
-        #print("output2=",output2.shape)
-        #deconv1 = self.deconv1.forward(torch.cat([deconv2, self.upsample(output2)], 1))
         output1 = self.output1_1.forward(torch.cat([deconv2, self.upsample(output2)], 1))
-        #print("output1=",output1.shape)
         output1 = torch.cat([output1,output1,output1],1)
-        #output1 = self.upsample(output1)
+
+
         deconv2 = self.upsample1(deconv2)
         deconv2_2 = self.deconv1_2.forward(torch.cat([deconv2, conv1 * self.weight * 0.1], 1))
         output2_2 = self.output1_2.forward(torch.cat([deconv2, conv1 * self.weight * 0.1], 1))
-        #deconv1_1 = self.output1.forward(torch.cat([deconv1_2,self.upsample(output1_2)], 1))
         output2_1 = self.output1.forward(torch.cat([deconv2_2,self.upsample(output2_2)], 1))
 
         
         deconv1_2 = self.deconv2.forward(torch.cat([center_out, center_in * self.weight * 0.1], 1))
         output1_2 = self.output2.forward(torch.cat([center_out, center_in * self.weight * 0.1], 1))
-        #deconv1_1 = self.output1.forward(torch.cat([deconv1_2,self.upsample(output1_2)], 1))
         output1_1 = self.output1.forward(torch.cat([deconv1_2,self.upsample(output1_2)], 1))
-        #output1_1 = self.tanh(output1_1)
-    #    output1_1 = torch.cat([output1_1, output1_1, output1_1],1)
-        #output1_1 = self.upsample(output1_1)
-        
 
-        #deconv3 = self.upsample1(deconv3)
-        #deconv2_3 = self.deconv2_3.forward(torch.cat([deconv3, conv2 * self.weight * 0.5], 1))
-        #output2_3 = self.output2_3.forward(torch.cat([deconv3, conv2 * self.weight * 0.5], 1))
-        #deconv2 = self.upsample1(deconv2)
-        
-        #output2_1 = self.upsample(output2_1)
-        #outputv = torch.cat([output1_1, output1_1, output1_1], 1)
-        #result.append(output2)
-        #print("output2=",deconv2.shape)
-        #deconv1 = self.deconv1.forward(torch.cat([deconv2, self.upsample(output2)], 1))
-        #output2
-        # _1 = self.output1.forward(torch.cat([deconv2_2, self.upsample(output2_2)], 1))
-        #result.append(output1)
-        #print("output1=",output1.shape)
-        #output1 = self.upsample(output1)
         outputdiv=output1_1 / output1
         output=outputdiv * output2_1
-#        output = output1
-        #outputmut = output1_1 * output2_1
-#        output = output2_1 / output1
-        #output = output1
 
         return output
-        #, output1, output2_1
-        #, output1_1,outputmut
