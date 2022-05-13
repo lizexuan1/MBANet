@@ -13,6 +13,13 @@ Run the script below, the results will be saved in `./result/`
     --which_direction AtoB
     --dataset_mode pair
     --which_model_netG _UNetGenerator
+    --skip 1
+    --self_attention
+    --use_norm 1
+    --use_wgan 0
+    --times_residual
+    --instance_norm 0
+    --resize_or_crop no
     --which_epoch latest
     
     
